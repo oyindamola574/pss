@@ -1,0 +1,38 @@
+{
+  "success": true,
+  "scanId": "scan-1783148510552",
+  "targetAddress": "4hXTCkRzt9WyecNzV1XPgCDfGAZzQKNxLXgynz5QDuWJ8owkMLTn9hPWK8FWP9iHjAVEWFZkFkqjDzPSmkV7bqC",
+  "addressType": "TRANSACTION",
+  "riskScore": 0,
+  "severity": "SAFE",
+  "confidence": 100,
+  "threats": [],
+  "forensics": {
+    "slot": 0,
+    "blockTime": null,
+    "signerCount": 1,
+    "instructionCount": 3,
+    "innerCallCount": 2,
+    "programsInvoked": [
+      "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    ],
+    "fee": 5000
+  },
+  "telemetry": {
+    "bytecodeSizeKb": 0,
+    "txCount": 1,
+    "solBalance": 0,
+    "executable": false,
+    "owner": "N/A"
+  },
+  "mlProbabilities": {
+    "SAFE": 1,
+    "WARNING": 0,
+    "CRITICAL": 0
+  },
+  "signature": "sim-sig-tx",
+  "scanFeeSOL": 0.02,
+  "scannedAt": "2026-07-04T07:01:50.552Z",
+  "reportUrl": "/api/reports/scan-1783148510552",
+  "explorerUrl": "https://explorer.solana.com/address/4hXTCkRzt9WyecNzV1XPgCDfGAZzQKNxLXgynz5QDuWJ8owkMLTn9hPWK8FWP9iHjAVEWFZkFkqjDzPSmkV7bqC?cluster=devnet"
+}

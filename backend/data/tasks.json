@@ -1,0 +1,419 @@
+[
+  {
+    "id": "scan-1783149119870",
+    "title": "Audit: GDfu5L8T… (WALLET)",
+    "description": "Security risk assessment for GDfu5L8Tbmn98kRF4ASX2R9qjAkhzUcouumaZM7uuxqE.",
+    "targetAddress": "GDfu5L8Tbmn98kRF4ASX2R9qjAkhzUcouumaZM7uuxqE",
+    "signature": "sim-sig-1a77yhsg9n1",
+    "reportUrl": "/api/reports/scan-1783149119870",
+    "status": "Completed",
+    "priority": "Medium",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:11:59.871Z",
+    "riskScore": 0,
+    "severity": "SAFE",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/GDfu5L8Tbmn98kRF4ASX2R9qjAkhzUcouumaZM7uuxqE?cluster=devnet"
+  },
+  {
+    "id": "scan-1783149009251",
+    "title": "Audit: 8UoeBNR6… (PDA)",
+    "description": "Security risk assessment for 8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy.",
+    "targetAddress": "8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy",
+    "signature": "sim-sig-kuogpih0x0o",
+    "reportUrl": "/api/reports/scan-1783149009251",
+    "status": "Review",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:10:09.252Z",
+    "riskScore": 40,
+    "severity": "WARNING",
+    "vulnerabilities": [
+      {
+        "type": "LAMPORT_DRAINING",
+        "severity": "HIGH",
+        "description": "The program allows arbitrary transfer of lamports from a program-owned account without validating caller authority or enforcing an amount cap.",
+        "remediation": "Enforce a maximum transfer amount and require a signed authority instruction before debiting any program-owned account."
+      }
+    ],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148958998",
+    "title": "Audit: GDfu5L8T… (WALLET)",
+    "description": "Security risk assessment for GDfu5L8Tbmn98kRF4ASX2R9qjAkhzUcouumaZM7uuxqE.",
+    "targetAddress": "GDfu5L8Tbmn98kRF4ASX2R9qjAkhzUcouumaZM7uuxqE",
+    "signature": "sim-sig-o5hl2zvyixd",
+    "reportUrl": "/api/reports/scan-1783148958998",
+    "status": "Completed",
+    "priority": "Medium",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:09:18.998Z",
+    "riskScore": 0,
+    "severity": "SAFE",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/GDfu5L8Tbmn98kRF4ASX2R9qjAkhzUcouumaZM7uuxqE?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148928117",
+    "title": "Audit: 8UoeBNR6… (PDA)",
+    "description": "Security risk assessment for 8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy.",
+    "targetAddress": "8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy",
+    "signature": "sim-sig-6m8h98mhwab",
+    "reportUrl": "/api/reports/scan-1783148928117",
+    "status": "Review",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:08:48.117Z",
+    "riskScore": 40,
+    "severity": "WARNING",
+    "vulnerabilities": [
+      {
+        "type": "LAMPORT_DRAINING",
+        "severity": "HIGH",
+        "description": "The program allows arbitrary transfer of lamports from a program-owned account without validating caller authority or enforcing an amount cap.",
+        "remediation": "Enforce a maximum transfer amount and require a signed authority instruction before debiting any program-owned account."
+      }
+    ],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148892576",
+    "title": "Audit: 8UoeBNR6… (PDA)",
+    "description": "Security risk assessment for 8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy.",
+    "targetAddress": "8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy",
+    "signature": "sim-sig-rbtxco78rk",
+    "reportUrl": "/api/reports/scan-1783148892576",
+    "status": "Review",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:08:12.577Z",
+    "riskScore": 40,
+    "severity": "WARNING",
+    "vulnerabilities": [
+      {
+        "type": "LAMPORT_DRAINING",
+        "severity": "HIGH",
+        "description": "The program allows arbitrary transfer of lamports from a program-owned account without validating caller authority or enforcing an amount cap.",
+        "remediation": "Enforce a maximum transfer amount and require a signed authority instruction before debiting any program-owned account."
+      }
+    ],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148705132",
+    "title": "Audit: PDAvulne… (PDA)",
+    "description": "Security risk assessment for PDAvulnerableExampleAddress1111111111111.",
+    "targetAddress": "PDAvulnerableExampleAddress1111111111111",
+    "signature": "sim-sig-yc1pkhr770d",
+    "reportUrl": "/api/reports/scan-1783148705132",
+    "status": "Review",
+    "priority": "High",
+    "assignedTo": [
+      "Developer Lead"
+    ],
+    "createdBy": "Project Manager",
+    "createdAt": "2026-07-04T07:05:05.133Z",
+    "riskScore": 35,
+    "severity": "WARNING",
+    "vulnerabilities": [
+      {
+        "type": "REINITIALIZATION_ATTACK",
+        "severity": "CRITICAL",
+        "description": "Program does not check whether an account has already been initialized. A second initialize call overwrites existing state, allowing an attacker to reset balances or authority.",
+        "remediation": "Add an is_initialized boolean guard or use Anchor's #[account(init)] which enforces single initialization."
+      },
+      {
+        "type": "RENT_EXEMPTION_COLLAPSE",
+        "severity": "HIGH",
+        "description": "An instruction subtracts lamports from a data account without checking the post-transfer balance against the minimum rent-exempt threshold. Validators may garbage-collect the account.",
+        "remediation": "After any lamport deduction, verify account.lamports() >= Rent::get()?.minimum_balance(data_len). Use Anchor's rent_exempt = enforce constraint."
+      }
+    ],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/PDAvulnerableExampleAddress1111111111111?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148510552",
+    "title": "Audit: 4hXTCkRz… (TRANSACTION)",
+    "description": "Security risk assessment for 4hXTCkRzt9WyecNzV1XPgCDfGAZzQKNxLXgynz5QDuWJ8owkMLTn9hPWK8FWP9iHjAVEWFZkFkqjDzPSmkV7bqC.",
+    "targetAddress": "4hXTCkRzt9WyecNzV1XPgCDfGAZzQKNxLXgynz5QDuWJ8owkMLTn9hPWK8FWP9iHjAVEWFZkFkqjDzPSmkV7bqC",
+    "signature": "sim-sig-tx",
+    "reportUrl": "/api/reports/scan-1783148510552",
+    "status": "Completed",
+    "priority": "Medium",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "External User",
+    "createdAt": "2026-07-04T07:01:50.552Z",
+    "riskScore": 0,
+    "severity": "SAFE",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/4hXTCkRzt9WyecNzV1XPgCDfGAZzQKNxLXgynz5QDuWJ8owkMLTn9hPWK8FWP9iHjAVEWFZkFkqjDzPSmkV7bqC?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148510083",
+    "title": "Audit: PDAvulne… (PDA)",
+    "description": "Security risk assessment for PDAvulnerableExampleAddress1111111111111.",
+    "targetAddress": "PDAvulnerableExampleAddress1111111111111",
+    "signature": "sim-sig-custom",
+    "reportUrl": "/api/reports/scan-1783148510083",
+    "status": "Completed",
+    "priority": "Medium",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "External User",
+    "createdAt": "2026-07-04T07:01:50.083Z",
+    "riskScore": 0,
+    "severity": "SAFE",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/PDAvulnerableExampleAddress1111111111111?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148509985",
+    "title": "Audit: PDAvulne… (PDA)",
+    "description": "Security risk assessment for PDAvulnerableExampleAddress1111111111111.",
+    "targetAddress": "PDAvulnerableExampleAddress1111111111111",
+    "signature": "sim-sig-pda",
+    "reportUrl": "/api/reports/scan-1783148509985",
+    "status": "Review",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "External User",
+    "createdAt": "2026-07-04T07:01:49.986Z",
+    "riskScore": 35,
+    "severity": "WARNING",
+    "vulnerabilities": [
+      {
+        "type": "REINITIALIZATION_ATTACK",
+        "severity": "CRITICAL",
+        "description": "Program does not check whether an account has already been initialized. A second initialize call overwrites existing state, allowing an attacker to reset balances or authority.",
+        "remediation": "Add an is_initialized boolean guard or use Anchor's #[account(init)] which enforces single initialization."
+      },
+      {
+        "type": "RENT_EXEMPTION_COLLAPSE",
+        "severity": "HIGH",
+        "description": "An instruction subtracts lamports from a data account without checking the post-transfer balance against the minimum rent-exempt threshold. Validators may garbage-collect the account.",
+        "remediation": "After any lamport deduction, verify account.lamports() >= Rent::get()?.minimum_balance(data_len). Use Anchor's rent_exempt = enforce constraint."
+      }
+    ],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/PDAvulnerableExampleAddress1111111111111?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148509967",
+    "title": "Audit: Tokenkeg… (PROGRAM)",
+    "description": "Security risk assessment for TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA.",
+    "targetAddress": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "signature": "sim-sig-spl",
+    "reportUrl": "/api/reports/scan-1783148509967",
+    "status": "Completed",
+    "priority": "Medium",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "External User",
+    "createdAt": "2026-07-04T07:01:49.968Z",
+    "riskScore": 0,
+    "severity": "SAFE",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148432064",
+    "title": "Audit: PDAvulne… (PDA)",
+    "description": "Security risk assessment for PDAvulnerableExampleAddress1111111111111.",
+    "targetAddress": "PDAvulnerableExampleAddress1111111111111",
+    "signature": "sim-sig-report-001",
+    "reportUrl": "/api/reports/scan-1783148432064",
+    "status": "Review",
+    "priority": "Urgent",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:00:32.065Z",
+    "riskScore": 70,
+    "severity": "CRITICAL",
+    "vulnerabilities": [
+      {
+        "type": "REINITIALIZATION_ATTACK",
+        "severity": "CRITICAL",
+        "description": "Program does not check whether an account has already been initialized. A second initialize call overwrites existing state, allowing an attacker to reset balances or authority.",
+        "remediation": "Add an is_initialized boolean guard or use Anchor's #[account(init)] which enforces single initialization."
+      },
+      {
+        "type": "RENT_EXEMPTION_COLLAPSE",
+        "severity": "HIGH",
+        "description": "An instruction subtracts lamports from a data account without checking the post-transfer balance against the minimum rent-exempt threshold. Validators may garbage-collect the account.",
+        "remediation": "After any lamport deduction, verify account.lamports() >= Rent::get()?.minimum_balance(data_len). Use Anchor's rent_exempt = enforce constraint."
+      }
+    ],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/PDAvulnerableExampleAddress1111111111111?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148432047",
+    "title": "Audit: Tokenkeg… (PROGRAM)",
+    "description": "Security risk assessment for TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA.",
+    "targetAddress": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "signature": "sim-sig-spl-001",
+    "reportUrl": "/api/reports/scan-1783148432047",
+    "status": "Completed",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:00:32.047Z",
+    "riskScore": 35,
+    "severity": "WARNING",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148406499",
+    "title": "Audit: Tokenkeg… (PROGRAM)",
+    "description": "Security risk assessment for TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA.",
+    "targetAddress": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "signature": "sim-sig-test002",
+    "reportUrl": "/api/reports/scan-1783148406499",
+    "status": "Completed",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:00:06.499Z",
+    "riskScore": 35,
+    "severity": "WARNING",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA?cluster=devnet"
+  },
+  {
+    "id": "scan-1783148400601",
+    "title": "Audit: PDAvulne… (PDA)",
+    "description": "Security risk assessment for PDAvulnerableExampleAddress1111111111111.",
+    "targetAddress": "PDAvulnerableExampleAddress1111111111111",
+    "signature": "sim-sig-test001",
+    "reportUrl": "/api/reports/scan-1783148400601",
+    "status": "Review",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-04T07:00:00.601Z",
+    "riskScore": 35,
+    "severity": "WARNING",
+    "vulnerabilities": [
+      {
+        "type": "REINITIALIZATION_ATTACK",
+        "severity": "CRITICAL",
+        "description": "Program does not check whether an account has already been initialized. A second initialize call overwrites existing state, allowing an attacker to reset balances or authority.",
+        "remediation": "Add an is_initialized boolean guard or use Anchor's #[account(init)] which enforces single initialization."
+      },
+      {
+        "type": "RENT_EXEMPTION_COLLAPSE",
+        "severity": "HIGH",
+        "description": "An instruction subtracts lamports from a data account without checking the post-transfer balance against the minimum rent-exempt threshold. Validators may garbage-collect the account.",
+        "remediation": "After any lamport deduction, verify account.lamports() >= Rent::get()?.minimum_balance(data_len). Use Anchor's rent_exempt = enforce constraint."
+      }
+    ],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/PDAvulnerableExampleAddress1111111111111?cluster=devnet"
+  },
+  {
+    "id": "scan-1783104303828",
+    "title": "Audit: Tokenkeg... (PROGRAM)",
+    "description": "Security risk assessment for Solana target address TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA.",
+    "targetAddress": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "status": "Completed",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-03T18:45:03.828Z",
+    "riskScore": 35,
+    "severity": "WARNING",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA?cluster=devnet",
+    "signature": "sim-sig-th6zlkht8fo"
+  },
+  {
+    "id": "scan-1783104282617",
+    "title": "Audit: PDAvulne... (PDA)",
+    "description": "Security risk assessment for Solana target address PDAvulnerableExampleAddress1111111111111.",
+    "targetAddress": "PDAvulnerableExampleAddress1111111111111",
+    "status": "Completed",
+    "priority": "High",
+    "assignedTo": [
+      "Self"
+    ],
+    "createdBy": "Developer",
+    "createdAt": "2026-07-03T18:44:42.617Z",
+    "riskScore": 35,
+    "severity": "WARNING",
+    "vulnerabilities": [],
+    "comments": [],
+    "projectLink": "https://explorer.solana.com/address/PDAvulnerableExampleAddress1111111111111?cluster=devnet",
+    "signature": "sim-sig-prgcx71dgmj"
+  },
+  {
+    "id": "scan-seed-1",
+    "title": "Audit: SPL Token Program",
+    "description": "Review safety profile of the core token library on-chain.",
+    "targetAddress": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "status": "Completed",
+    "priority": "Urgent",
+    "assignedTo": [
+      "Security Lead",
+      "Platform Auditor"
+    ],
+    "createdBy": "System",
+    "createdAt": "2026-07-02T18:41:23.620Z",
+    "riskScore": 3,
+    "severity": "SAFE",
+    "vulnerabilities": [],
+    "comments": [
+      {
+        "id": "c-1",
+        "user": "Security Lead",
+        "text": "Verified on-chain bytecode size matches SPL release build. Zero vulnerabilities found.",
+        "createdAt": "2026-07-02T22:41:23.620Z"
+      }
+    ],
+    "projectLink": "https://explorer.solana.com/address/TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA?cluster=devnet"
+  }
+]

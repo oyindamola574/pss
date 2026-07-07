@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "scanId": "scan-1783149009251",
+  "targetAddress": "8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy",
+  "addressType": "PDA",
+  "riskScore": 40,
+  "severity": "WARNING",
+  "confidence": 67,
+  "threats": [
+    {
+      "type": "LAMPORT_DRAINING",
+      "severity": "HIGH",
+      "description": "The program allows arbitrary transfer of lamports from a program-owned account without validating caller authority or enforcing an amount cap.",
+      "remediation": "Enforce a maximum transfer amount and require a signed authority instruction before debiting any program-owned account."
+    }
+  ],
+  "forensics": null,
+  "telemetry": {
+    "bytecodeSizeKb": 0,
+    "txCount": 0,
+    "solBalance": 0.5,
+    "executable": false,
+    "owner": "System Program"
+  },
+  "mlProbabilities": {
+    "SAFE": 0,
+    "WARNING": 0.6666666666666666,
+    "CRITICAL": 0.3333333333333333
+  },
+  "signature": "sim-sig-kuogpih0x0o",
+  "scanFeeSOL": 0.02,
+  "scannedAt": "2026-07-04T07:10:09.251Z",
+  "reportUrl": "/api/reports/scan-1783149009251",
+  "explorerUrl": "https://explorer.solana.com/address/8UoeBNR6j3cbVjj8qppYPjgRZQKEhKBQvdm836AJ5ZUy?cluster=devnet"
+}

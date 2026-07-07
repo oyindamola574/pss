@@ -1,0 +1,19 @@
+{
+  "name": "protocol-security-scout",
+  "version": "1.0.0",
+  "description": "Protocol Security Scout — Autonomous Solana smart contract security scanning platform",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names 'BACKEND,FRONTEND' --prefix-colors 'blue,green' \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm install && npm run build",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "test": "cd backend && npx tsx tests/knn.test.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

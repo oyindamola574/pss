@@ -1,0 +1,41 @@
+{
+  "success": true,
+  "scanId": "scan-1783148400601",
+  "targetAddress": "PDAvulnerableExampleAddress1111111111111",
+  "addressType": "PDA",
+  "riskScore": 35,
+  "severity": "WARNING",
+  "confidence": 100,
+  "threats": [
+    {
+      "type": "REINITIALIZATION_ATTACK",
+      "severity": "CRITICAL",
+      "description": "Program does not check whether an account has already been initialized. A second initialize call overwrites existing state, allowing an attacker to reset balances or authority.",
+      "remediation": "Add an is_initialized boolean guard or use Anchor's #[account(init)] which enforces single initialization."
+    },
+    {
+      "type": "RENT_EXEMPTION_COLLAPSE",
+      "severity": "HIGH",
+      "description": "An instruction subtracts lamports from a data account without checking the post-transfer balance against the minimum rent-exempt threshold. Validators may garbage-collect the account.",
+      "remediation": "After any lamport deduction, verify account.lamports() >= Rent::get()?.minimum_balance(data_len). Use Anchor's rent_exempt = enforce constraint."
+    }
+  ],
+  "forensics": null,
+  "telemetry": {
+    "bytecodeSizeKb": 0,
+    "txCount": 73,
+    "solBalance": 0.5,
+    "executable": false,
+    "owner": "System Program"
+  },
+  "mlProbabilities": {
+    "SAFE": 0,
+    "WARNING": 1,
+    "CRITICAL": 0
+  },
+  "signature": "sim-sig-test001",
+  "scanFeeSOL": 0.02,
+  "scannedAt": "2026-07-04T07:00:00.601Z",
+  "reportUrl": "/api/reports/scan-1783148400601",
+  "explorerUrl": "https://explorer.solana.com/address/PDAvulnerableExampleAddress1111111111111?cluster=devnet"
+}

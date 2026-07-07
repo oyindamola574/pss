@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "scanId": "scan-1783148958998",
+  "targetAddress": "GDfu5L8Tbmn98kRF4ASX2R9qjAkhzUcouumaZM7uuxqE",
+  "addressType": "WALLET",
+  "riskScore": 0,
+  "severity": "SAFE",
+  "confidence": 100,
+  "threats": [],
+  "forensics": null,
+  "telemetry": {
+    "bytecodeSizeKb": 0,
+    "txCount": 50,
+    "solBalance": 10.66507348,
+    "executable": false,
+    "owner": "11111111111111111111111111111111"
+  },
+  "mlProbabilities": {
+    "SAFE": 1,
+    "WARNING": 0,
+    "CRITICAL": 0
+  },
+  "signature": "sim-sig-o5hl2zvyixd",
+  "scanFeeSOL": 0.02,
+  "scannedAt": "2026-07-04T07:09:18.998Z",
+  "reportUrl": "/api/reports/scan-1783148958998",
+  "explorerUrl": "https://explorer.solana.com/address/GDfu5L8Tbmn98kRF4ASX2R9qjAkhzUcouumaZM7uuxqE?cluster=devnet"
+}
