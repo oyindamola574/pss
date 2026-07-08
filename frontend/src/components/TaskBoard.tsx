@@ -1,6 +1,6 @@
 // pss/frontend/src/components/TaskBoard.tsx
 import { useState } from "react";
-import { MessageSquare, CheckCircle } from "lucide-react";
+import { MessageSquare, CheckCircle, Award } from "lucide-react";
 import type { SecurityTask, ScanReport } from "../types";
 
 interface Props {
@@ -11,17 +11,20 @@ interface Props {
   onAddComment: (id: string, user: string, text: string) => void;
   userName: string;
   onViewReport: (report: ScanReport) => void;
+  onReviewModel: (id: string, label: "SAFE" | "WARNING" | "CRITICAL") => void;
 }
 
 const COLUMNS: SecurityTask["status"][] = ["Pending", "In Progress", "Review", "Completed"];
 
 const SEV_BADGE: Record<string, string> = {
   CRITICAL: "bg-red-950/20 text-red-400 border-red-900/30",
-  WARNING:  "bg-amber-950/20 text-amber-400 border-amber-900/30",
-  SAFE:     "bg-emerald-950/20 text-emerald-400 border-emerald-900/30",
+  WARNING: "bg-amber-950/20 text-amber-400 border-amber-900/30",
+  SAFE: "bg-emerald-950/20 text-emerald-400 border-emerald-900/30",
 };
 
-export default function TaskBoard({ tasks, selectedTask, onSelectTask, onUpdateStatus, onAddComment, userName, onViewReport }: Props) {
+export default function TaskBoard({
+  tasks, selectedTask, onSelectTask, onUpdateStatus, onAddComment, userName, onViewReport, onReviewModel
+}: Props) {
   const [commentText, setCommentText] = useState("");
 
   const handleComment = () => {
@@ -33,14 +36,17 @@ export default function TaskBoard({ tasks, selectedTask, onSelectTask, onUpdateS
   const fetchAndViewReport = async (task: SecurityTask) => {
     try {
       const res = await fetch(task.reportUrl);
-      if (res.ok) { const r = await res.json(); onViewReport(r); }
+      if (res.ok) {
+        const r = await res.json();
+        onViewReport(r);
+      }
     } catch { /* ignore */ }
   };
 
   return (
     <div className="glass rounded-2xl p-5 flex flex-col gap-5 shadow-xl">
       <h2 className="text-sm font-bold text-white border-b border-white/5 pb-2">
-        Collaborative Audit Sprint Board
+        Model Review & Sprint Board Queue
       </h2>
 
       {/* Kanban columns */}
@@ -56,11 +62,10 @@ export default function TaskBoard({ tasks, selectedTask, onSelectTask, onUpdateS
               {colTasks.map(task => (
                 <div key={task.id}
                   onClick={() => onSelectTask(task)}
-                  className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
-                    selectedTask?.id === task.id
-                      ? "bg-[#1a2540] border-purple-500"
-                      : "bg-[#090d16] border-white/5 hover:border-white/15"
-                  }`}>
+                  className={`p-2.5 rounded-lg border cursor-pointer transition-all ${selectedTask?.id === task.id
+                    ? "bg-[#1a2540] border-purple-500"
+                    : "bg-[#090d16] border-white/5 hover:border-white/15"
+                    }`}>
                   <div className="flex justify-between items-center gap-1 mb-1">
                     <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${SEV_BADGE[task.severity] ?? ""}`}>
                       {task.severity}
@@ -110,10 +115,34 @@ export default function TaskBoard({ tasks, selectedTask, onSelectTask, onUpdateS
             </div>
           </div>
 
+          {/* Model Review & Dataset Labeling (Phase 1 addition) */}
+          <div className="border-t border-white/5 pt-3 mt-1 flex flex-col gap-2 bg-[#090d16]/55 p-3 rounded-lg border border-purple-500/10">
+            <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1">
+              <Award className="w-3.5 h-3.5" /> Model Review & Dataset Labeling Queue
+            </p>
+            <p className="text-[9px] text-gray-400">
+              Verify accuracy of the security classification. Submitting a review adds this target with its true label to the dataset and retrains the model.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => onReviewModel(selectedTask.id, "SAFE")}
+                className="bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/30 text-emerald-400 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all">
+                Mark SAFE
+              </button>
+              <button onClick={() => onReviewModel(selectedTask.id, "WARNING")}
+                className="bg-amber-950/40 hover:bg-amber-900/60 border border-amber-900/30 text-amber-400 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all">
+                Mark WARNING
+              </button>
+              <button onClick={() => onReviewModel(selectedTask.id, "CRITICAL")}
+                className="bg-red-950/40 hover:bg-red-900/60 border border-red-900/30 text-red-400 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all">
+                Mark CRITICAL
+              </button>
+            </div>
+          </div>
+
           {/* Comments */}
           <div className="flex flex-col gap-2 mt-1">
             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1">
-              <MessageSquare className="w-3.5 h-3.5 text-blue-400" /> Logs ({selectedTask.comments.length})
+              <MessageSquare className="w-3.5 h-3.5 text-blue-400" /> Logs & Discussion ({selectedTask.comments.length})
             </p>
             <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
               {selectedTask.comments.map(c => (

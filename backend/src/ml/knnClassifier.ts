@@ -11,80 +11,50 @@ export interface PredictionResult {
   confidence: number;
 }
 
+import { loadDataset } from "./dataset.js";
+
 // 4 Features: [bytecodeSize (KB), txCount (last 100 slots), lamports (SOL), failedChecks]
 interface TrainingSample {
   features: [number, number, number, number];
   label: "SAFE" | "WARNING" | "CRITICAL";
 }
 
-// Generate a realistic dataset of 150 training samples for the Security Classifier
-// (analogous to the 150 Iris flower samples)
-const trainingSet: TrainingSample[] = [];
+let trainingSet: TrainingSample[] = [];
+let means = [0, 0, 0, 0];
+let stds = [0, 0, 0, 0];
 
-// Seed Safe contracts (Label: SAFE, low failedChecks)
-for (let i = 0; i < 50; i++) {
-  trainingSet.push({
-    // Bytecode: 100-400KB, TxCount: 50-800, SOL: 10-1000, FailedChecks: 0-1
-    features: [
-      100 + Math.random() * 300,
-      50 + Math.random() * 750,
-      10 + Math.random() * 990,
-      Math.random() > 0.8 ? 1 : 0
-    ],
-    label: "SAFE"
-  });
-}
+export function initClassifier() {
+  const data = loadDataset();
+  trainingSet = data.map(d => ({
+    features: d.features,
+    label: d.label
+  }));
 
-// Seed Warning contracts (Label: WARNING, moderate failedChecks)
-for (let i = 0; i < 50; i++) {
-  trainingSet.push({
-    // Bytecode: 50-300KB, TxCount: 10-400, SOL: 1-100, FailedChecks: 2-4
-    features: [
-      50 + Math.random() * 250,
-      10 + Math.random() * 390,
-      1 + Math.random() * 99,
-      2 + Math.floor(Math.random() * 3) // 2, 3, or 4
-    ],
-    label: "WARNING"
-  });
-}
+  const n = trainingSet.length;
+  means = [0, 0, 0, 0];
+  stds = [0, 0, 0, 0];
 
-// Seed Critical contracts (Label: CRITICAL, high failedChecks)
-for (let i = 0; i < 50; i++) {
-  trainingSet.push({
-    // Bytecode: 10-200KB, TxCount: 0-100, SOL: 0-20, FailedChecks: 5-10
-    features: [
-      10 + Math.random() * 190,
-      Math.random() * 100,
-      Math.random() * 20,
-      5 + Math.floor(Math.random() * 6) // 5 to 10
-    ],
-    label: "CRITICAL"
-  });
-}
-
-// Calculate Mean and Standard Deviation for scaling (StandardScaler behavior)
-const means = [0, 0, 0, 0];
-const stds = [0, 0, 0, 0];
-
-const n = trainingSet.length;
-for (const sample of trainingSet) {
+  for (const sample of trainingSet) {
+    for (let j = 0; j < 4; j++) {
+      means[j] += sample.features[j];
+    }
+  }
   for (let j = 0; j < 4; j++) {
-    means[j] += sample.features[j];
+    means[j] /= n;
+  }
+
+  for (const sample of trainingSet) {
+    for (let j = 0; j < 4; j++) {
+      stds[j] += Math.pow(sample.features[j] - means[j], 2);
+    }
+  }
+  for (let j = 0; j < 4; j++) {
+    stds[j] = Math.sqrt(stds[j] / n) || 1; // avoid division by zero
   }
 }
-for (let j = 0; j < 4; j++) {
-  means[j] /= n;
-}
 
-for (const sample of trainingSet) {
-  for (let j = 0; j < 4; j++) {
-    stds[j] += Math.pow(sample.features[j] - means[j], 2);
-  }
-}
-for (let j = 0; j < 4; j++) {
-  stds[j] = Math.sqrt(stds[j] / n) || 1; // avoid division by zero
-}
+// Initialize on module load
+initClassifier();
 
 // Standardize features: Z = (X - mean) / std
 function scaleFeatures(features: [number, number, number, number]): [number, number, number, number] {

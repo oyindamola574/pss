@@ -106,12 +106,18 @@ export default function ReportView({ report }: Props) {
           </div>
           {/* On-chain receipt */}
           <div className="mt-auto pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono">
-            <span className="text-gray-500">Payment signature:</span>
-            <a href={`https://explorer.solana.com/tx/${report.signature}?cluster=devnet`}
-              target="_blank" rel="noreferrer"
-              className="text-blue-400 hover:text-blue-300 flex items-center gap-1">
-              {report.signature.slice(0, 10)}… <ExternalLink className="w-3 h-3" />
-            </a>
+            <span className="text-gray-500">Payment status:</span>
+            {report.signature && report.signature !== "none" && !report.signature.includes("free") ? (
+              <a href={`https://explorer.solana.com/tx/${report.signature}?cluster=devnet`}
+                target="_blank" rel="noreferrer"
+                className="text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                {report.signature.slice(0, 10)}… <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : (
+              <span className="text-emerald-400 font-bold uppercase tracking-wider text-[8px] bg-emerald-950/20 px-2 py-0.5 rounded border border-emerald-900/30">
+                Free Program Scan
+              </span>
+            )}
           </div>
         </div>
       </div>

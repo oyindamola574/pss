@@ -85,3 +85,13 @@ export interface WsMessage {
   message?: string;
   taskId?: string;
 }
+
+export interface BenchmarkMetrics {
+  total: number;
+  accuracy: number;
+  precision: { SAFE: number; WARNING: number; CRITICAL: number };
+  recall: { SAFE: number; WARNING: number; CRITICAL: number };
+  falsePositiveRate: number;
+  avgLatencyMs: number;
+  baselineAccuracy: number;
+}

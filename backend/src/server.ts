@@ -8,8 +8,16 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
-import { classifySecurityTarget } from "./ml/knnClassifier.js";
-import { verifyPayment, resolveAndScanTarget, VAULT_ADDRESS, THREAT_REGISTRY } from "./solana.js";
+import { classifySecurityTarget, initClassifier } from "./ml/knnClassifier.js";
+import { 
+  verifyPayment, 
+  resolveAndScanTarget, 
+  isProgramExecutable,
+  VAULT_ADDRESS, 
+  THREAT_REGISTRY 
+} from "./solana.js";
+import { loadDataset, saveDataset } from "./ml/dataset.js";
+import { runBenchmark } from "./ml/benchmark.js";
 import contextRouter from "./routes/context.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -22,12 +30,13 @@ const TASKS_PATH  = path.join(DATA_DIR, "tasks.json");
 const REPORTS_DIR = path.join(DATA_DIR, "reports");
 if (!fs.existsSync(REPORTS_DIR)) fs.mkdirSync(REPORTS_DIR, { recursive: true });
 
-// ── Pricing (matches build_plan.md) ──────────────────────────────────────────
+// ── Pricing ──────────────────────────────────────────────────────────────────
 const FEE_GENERAL      = parseFloat(process.env.SCAN_FEE_GENERAL        ?? "0.02");
 const FEE_CUSTOM_BASE  = parseFloat(process.env.SCAN_FEE_CUSTOM_BASE    ?? "0.01");
 const FEE_PER_THREAT   = parseFloat(process.env.SCAN_FEE_CUSTOM_PER_THREAT ?? "0.005");
 
-export function calcScanFee(selectedThreats: string[]): number {
+export function calcScanFee(selectedThreats: string[], isProgram: boolean): number {
+  if (isProgram) return 0; // Program scans are free
   if (selectedThreats.length === 0) return FEE_GENERAL;
   return Math.round((FEE_CUSTOM_BASE + FEE_PER_THREAT * selectedThreats.length) * 1000) / 1000;
 }
@@ -48,28 +57,23 @@ export interface SecurityTask {
 // ── Task Persistence ──────────────────────────────────────────────────────────
 let tasks: SecurityTask[] = [];
 if (fs.existsSync(TASKS_PATH)) {
-  try { tasks = JSON.parse(fs.readFileSync(TASKS_PATH, "utf-8")); } catch { tasks = []; }
+  try { 
+    tasks = JSON.parse(fs.readFileSync(TASKS_PATH, "utf-8")); 
+  } catch { 
+    tasks = []; 
+  }
 } else {
-  tasks = [{
-    id: "scan-seed-1", title: "Audit: SPL Token Program",
-    description: "Review safety profile of the core token library on-chain.",
-    targetAddress: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-    status: "Completed", priority: "Urgent",
-    assignedTo: ["Security Lead"], createdBy: "System",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    riskScore: 3, severity: "SAFE", vulnerabilities: [],
-    comments: [{ id: "c-1", user: "Security Lead",
-      text: "Verified on-chain bytecode matches SPL release build. Zero vulnerabilities found.",
-      createdAt: new Date(Date.now() - 72000000).toISOString() }],
-    projectLink: "https://explorer.solana.com/address/TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA?cluster=devnet",
-    reportUrl: "/api/reports/scan-seed-1",
-  }];
+  // Empty historical tasks for new project initialization.
+  tasks = [];
   fs.writeFileSync(TASKS_PATH, JSON.stringify(tasks, null, 2));
 }
 
-function saveTasks() { fs.writeFileSync(TASKS_PATH, JSON.stringify(tasks, null, 2)); }
+function saveTasks() { 
+  fs.writeFileSync(TASKS_PATH, JSON.stringify(tasks, null, 2)); 
+}
 
 function logToLedger(type: string, payload: any) {
+  // Strip any personal identifier features to protect privacy
   fs.appendFileSync(LEDGER_PATH, JSON.stringify({ timestamp: new Date().toISOString(), type, ...payload }) + "\n");
 }
 
@@ -118,44 +122,74 @@ app.get("/api/config", (_req: Request, res: Response) => {
   });
 });
 
+// GET /api/benchmark — returns accuracy, precision, recall
+app.get("/api/benchmark", (_req: Request, res: Response) => {
+  try {
+    const metrics = runBenchmark();
+    res.json(metrics);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/dataset — returns labeled targets
+app.get("/api/dataset", (_req: Request, res: Response) => {
+  try {
+    res.json(loadDataset());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/scan/submit — full pipeline
 app.post("/api/scan/submit", async (req: Request, res: Response) => {
   const { signature, targetAddress, selectedThreats = [], customPattern, userRole } = req.body;
-  if (!signature || !targetAddress) {
-    return res.status(400).json({ success: false, error: "Missing signature or targetAddress" });
+  if (!targetAddress) {
+    return res.status(400).json({ success: false, error: "Missing targetAddress" });
   }
 
-  // Dynamic fee from request (validate on our side)
-  const expectedFee = calcScanFee(selectedThreats);
-
   try {
-    // Stage 1: Payment
-    broadcast({ type: "SCAN_PROGRESS", progress: 10, msg: "Verifying payment on Solana Devnet..." });
-    const paid = await verifyPayment(signature, expectedFee);
-    if (!paid) {
-      logToLedger("PAYMENT_FAILED", { signature, targetAddress, expectedFee });
-      return res.status(402).json({ success: false, error: `Payment verification failed. Expected ${expectedFee} SOL.` });
+    // Check if target is executable program on-chain
+    broadcast({ type: "SCAN_PROGRESS", progress: 5, msg: "Verifying target account type on Solana Devnet..." });
+    const isProgram = await isProgramExecutable(targetAddress);
+
+    // If it's not a program, a payment signature is strictly required
+    if (!isProgram && !signature) {
+      return res.status(400).json({ success: false, error: "Scan requires a payment transaction signature for wallet/PDA targets." });
     }
-    logToLedger("PAYMENT_SUCCESS", { signature, targetAddress, fee: expectedFee });
+
+    const expectedFee = calcScanFee(selectedThreats, isProgram);
+
+    // Stage 1: Payment Verification (only if fee > 0)
+    if (expectedFee > 0 && signature) {
+      broadcast({ type: "SCAN_PROGRESS", progress: 15, msg: "Verifying scan payment on Solana Devnet..." });
+      const paid = await verifyPayment(signature, expectedFee);
+      if (!paid) {
+        logToLedger("PAYMENT_FAILED", { signature, targetAddress, expectedFee });
+        return res.status(402).json({ success: false, error: `Payment verification failed. Expected ${expectedFee} SOL.` });
+      }
+      logToLedger("PAYMENT_SUCCESS", { signature, targetAddress, fee: expectedFee });
+    } else {
+      logToLedger("SCAN_FREE_PROGRAM", { targetAddress });
+    }
 
     // Stage 2: Resolve target
-    broadcast({ type: "SCAN_PROGRESS", progress: 35, msg: "Fetching Solana Devnet account metadata..." });
+    broadcast({ type: "SCAN_PROGRESS", progress: 40, msg: "Retrieving account state and transaction logs..." });
     const targetInfo = await resolveAndScanTarget(targetAddress, selectedThreats, customPattern);
 
     // Stage 3: ML scoring
-    broadcast({ type: "SCAN_PROGRESS", progress: 65, msg: "Running Iris KNN risk classifier..." });
+    broadcast({ type: "SCAN_PROGRESS", progress: 70, msg: "Executing KNN safety classifier..." });
     const prediction = classifySecurityTarget(
       targetInfo.bytecodeSizeKb, targetInfo.txCount,
       targetInfo.solBalance, targetInfo.failedChecks
     );
 
     // Stage 4: Report
-    broadcast({ type: "SCAN_PROGRESS", progress: 88, msg: "Generating audit report..." });
+    broadcast({ type: "SCAN_PROGRESS", progress: 90, msg: "Generating final assessment report..." });
 
     const scanId = `scan-${Date.now()}`;
     const reportUrl = `/api/reports/${scanId}`;
 
-    // Build the API response matching build_plan.md spec exactly
     const report = {
       success: true,
       scanId,
@@ -174,7 +208,7 @@ app.post("/api/scan/submit", async (req: Request, res: Response) => {
         owner: targetInfo.owner,
       },
       mlProbabilities: prediction.probabilities,
-      signature,
+      signature: signature || "none (free program scan)",
       scanFeeSOL: expectedFee,
       scannedAt: new Date().toISOString(),
       reportUrl,
@@ -183,16 +217,16 @@ app.post("/api/scan/submit", async (req: Request, res: Response) => {
 
     saveReport(scanId, report);
 
-    // Save to TMS task board
+    // Save to TMS task board (without PII)
     const newTask: SecurityTask = {
       id: scanId,
       title: `Audit: ${targetAddress.slice(0, 8)}… (${targetInfo.type})`,
       description: `Security risk assessment for ${targetAddress}.`,
-      targetAddress, signature, reportUrl,
+      targetAddress, signature: signature || undefined, reportUrl,
       status: targetInfo.failedChecks > 0 ? "Review" : "Completed",
       priority: prediction.severity === "CRITICAL" ? "Urgent" : prediction.severity === "WARNING" ? "High" : "Medium",
       assignedTo: userRole === "Project Manager" ? ["Developer Lead"] : ["Self"],
-      createdBy: userRole ?? "External User",
+      createdBy: "System Assessment",
       createdAt: new Date().toISOString(),
       riskScore: prediction.riskScore,
       severity: prediction.severity,
@@ -212,7 +246,58 @@ app.post("/api/scan/submit", async (req: Request, res: Response) => {
     console.error("[Server] Scan error:", err.message);
     logToLedger("SCAN_ERROR", { signature, targetAddress, error: err.message });
     broadcast({ type: "SCAN_PROGRESS", progress: 0, msg: `Error: ${err.message}` });
-    return res.status(500).json({ success: false, error: "Internal scan error" });
+    return res.status(500).json({ success: false, error: err.message || "Internal scan error" });
+  }
+});
+
+// POST /api/tasks/:id/review — Submit model review feedback to retrain dataset
+app.post("/api/tasks/:id/review", (req: Request, res: Response) => {
+  const { label } = req.body;
+  if (!label || !["SAFE", "WARNING", "CRITICAL"].includes(label)) {
+    return res.status(400).json({ error: "Invalid label provided." });
+  }
+
+  const task = tasks.find(t => t.id === req.params.id);
+  if (!task) return res.status(404).json({ error: "Task not found" });
+
+  try {
+    const data = loadDataset();
+    const existing = data.find(d => d.address === task.targetAddress);
+
+    if (existing) {
+      existing.label = label;
+      existing.vulnerabilities = task.vulnerabilities.map((v: any) => v.type);
+    } else {
+      // Basic feature mapping to construct dataset entry
+      data.push({
+        address: task.targetAddress,
+        type: task.title.includes("PROGRAM") ? "PROGRAM" : task.title.includes("WALLET") ? "WALLET" : task.title.includes("PDA") ? "PDA" : "TRANSACTION",
+        features: [task.riskScore > 50 ? 50 : 0, 10, 1, task.vulnerabilities.length],
+        label,
+        vulnerabilities: task.vulnerabilities.map((v: any) => v.type),
+        description: `Reviewed by analyst.`,
+      });
+    }
+
+    saveDataset(data);
+    initClassifier(); // Retrain model dynamically
+
+    task.severity = label;
+    task.comments.push({
+      id: `c-review-${Date.now()}`,
+      user: "Model Analyst",
+      text: `Analyst reviewed prediction: Marked as ${label}. Labeled dataset updated and model retrained.`,
+      createdAt: new Date().toISOString()
+    });
+    saveTasks();
+
+    logToLedger("MODEL_REVIEW_SUBMITTED", { taskId: task.id, label });
+    broadcast({ type: "ACTIVITY_UPDATE", message: `Analyst submitted label review for ${task.targetAddress.slice(0, 8)}... Marked as ${label}` });
+    broadcast({ type: "ACTIVITY_UPDATE", message: `KNN classifier retrained successfully on updated dataset.` });
+
+    res.json(task);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

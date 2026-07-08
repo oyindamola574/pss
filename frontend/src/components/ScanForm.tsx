@@ -18,67 +18,99 @@ interface Props {
   onSubmit: () => void;
   progress: number;
   progressMsg: string;
-}
-
-// Address type detector badge
-function detectType(addr: string): string {
-  if (!addr) return "";
-  if (addr.length >= 80) return "TX HASH";
-  if (addr.length >= 32 && addr.length <= 44) {
-    if (addr === "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") return "PROGRAM ✓";
-    if (addr === "11111111111111111111111111111111") return "SYSTEM PROGRAM ✓";
-    return "ADDRESS";
-  }
-  return "UNKNOWN";
+  isProgramTarget: boolean;
+  isCheckingType: boolean;
 }
 
 export default function ScanForm({
   threats, targetAddress, setTargetAddress, scanType, setScanType,
   selectedThreats, toggleThreat, customPattern, setCustomPattern,
   scanFee, isScanning, walletConnected, onSubmit, progress, progressMsg,
+  isProgramTarget, isCheckingType
 }: Props) {
-  const addrType = detectType(targetAddress);
+
+  // Deterministic UI badge selection
+  const getBadge = () => {
+    if (!targetAddress) return null;
+    if (isCheckingType) {
+      return (
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold px-2 py-0.5 rounded border bg-gray-950/30 text-gray-400 border-gray-900/30 animate-pulse">
+          RESOLVING...
+        </span>
+      );
+    }
+    if (isProgramTarget) {
+      return (
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold px-2 py-0.5 rounded border bg-emerald-950/30 text-emerald-400 border-emerald-900/30">
+          PROGRAM (FREE)
+        </span>
+      );
+    }
+    if (targetAddress.length >= 80) {
+      return (
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold px-2 py-0.5 rounded border bg-blue-950/30 text-blue-400 border-blue-900/30">
+          TX HASH
+        </span>
+      );
+    }
+    if (targetAddress.length >= 32 && targetAddress.length <= 44) {
+      return (
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold px-2 py-0.5 rounded border bg-purple-950/30 text-purple-400 border-purple-900/30">
+          ACCOUNT (0.02 SOL)
+        </span>
+      );
+    }
+    return (
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold px-2 py-0.5 rounded border bg-red-950/30 text-red-400 border-red-900/30">
+        INVALID ADDRESS
+      </span>
+    );
+  };
+
+  const actualFee = isProgramTarget ? 0 : scanFee;
+  const canSubmit = isScanning 
+    ? false 
+    : (isProgramTarget 
+        ? targetAddress.trim().length > 0 
+        : (walletConnected && targetAddress.trim().length > 0));
 
   return (
     <div className="glass rounded-2xl p-5 flex flex-col gap-5 shadow-xl">
-      {/* Step 3: Target */}
+      {/* Target Address Input */}
       <div>
         <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1.5">
-          Step 3 — Target Address
+          Step 1 — Target Address / Tx Hash
         </label>
         <div className="relative">
           <input
             type="text"
             value={targetAddress}
             onChange={e => setTargetAddress(e.target.value)}
-            placeholder="Program ID / Wallet / PDA / Tx Hash"
+            placeholder="Program ID / Wallet Address / PDA / Tx Hash"
             disabled={isScanning}
-            className="w-full bg-[#0d1525] border border-white/10 rounded-xl px-4 py-3 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 transition-colors pr-28"
+            className="w-full bg-[#0d1525] border border-white/10 rounded-xl px-4 py-3 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 transition-colors pr-36"
           />
-          {addrType && (
-            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold px-2 py-0.5 rounded border ${
-              addrType.includes("✓") ? "bg-emerald-950/30 text-emerald-400 border-emerald-900/30"
-              : addrType === "TX HASH" ? "bg-blue-950/30 text-blue-400 border-blue-900/30"
-              : "bg-purple-950/30 text-purple-400 border-purple-900/30"
-            }`}>{addrType}</span>
-          )}
+          {getBadge()}
         </div>
-        {/* Presets */}
+
+        {/* Address presets */}
         <div className="flex gap-2 mt-2 flex-wrap">
           {[
-            { label: "SPL Token (Safe)", addr: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", type: "general" },
-            { label: "PDA Exploit Demo", addr: "PDAvulnerableExampleAddress1111111111111", type: "custom" },
-            { label: "Tx Hash Demo", addr: "4hXTCkRzt9WyecNzV1XPgCDfGAZzQKNxLXgynz5QDuWJ8owkMLTn9hPWK8FWP9iHjAVEWFZkFkqjDzPSmkV7bqC", type: "general" },
+            { label: "SPL Token (Program - Free)", addr: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", type: "general" },
+            { label: "Raydium V4 (Program - Free)", addr: "9W52yHTbgwR2vsi53tr12yiM5u15685qYQhx4PSvEe22", type: "general" },
+            { label: "Solana System (Program - Free)", addr: "11111111111111111111111111111111", type: "general" },
           ].map(p => (
             <button key={p.label}
               onClick={() => { setTargetAddress(p.addr); setScanType(p.type as any); }}
-              className="text-[10px] bg-[#0d1525] hover:bg-[#1a2540] border border-white/5 px-2.5 py-1 rounded text-gray-400 hover:text-white transition-all"
-            >{p.label}</button>
+              className="text-[10px] bg-[#0d1525] hover:bg-[#1a2540] border border-white/5 px-2.5 py-1 rounded text-gray-400 hover:text-white transition-all font-medium"
+            >
+              {p.label}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Step 2: Scan Type */}
+      {/* Scan type */}
       <div>
         <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1.5">
           Step 2 — Scan Type
@@ -99,7 +131,7 @@ export default function ScanForm({
         </div>
       </div>
 
-      {/* Step 2B: All 8 threats (custom mode) */}
+      {/* Threat selection (custom mode) */}
       {scanType === "custom" && (
         <div className="bg-[#0d1525] p-4 rounded-xl border border-white/5 flex flex-col gap-2">
           <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">
@@ -122,7 +154,7 @@ export default function ScanForm({
               }`}>{t.baseSeverity}</span>
             </label>
           ))}
-          {/* Custom Pattern input */}
+          {/* Custom Pattern regex */}
           <div className="mt-2 border-t border-white/5 pt-3">
             <label className="text-[10px] text-gray-400 font-semibold block mb-1">
               Custom Pattern (optional regex or opcode signature)
@@ -136,32 +168,34 @@ export default function ScanForm({
         </div>
       )}
 
-      {/* Step 4: Fee + Submit */}
+      {/* Fee Display */}
       <div className="flex items-center justify-between bg-[#0d1525] px-4 py-3 rounded-xl border border-white/5">
         <div>
           <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Scan Fee</p>
-          <p className="text-lg font-bold font-mono text-purple-300">{scanFee} <span className="text-sm text-gray-400">SOL</span></p>
+          <p className="text-lg font-bold font-mono text-purple-300">{actualFee} <span className="text-sm text-gray-400">SOL</span></p>
         </div>
         <div className="text-[10px] text-gray-500 text-right">
-          {scanType === "general" ? "General audit flat rate" : `0.01 + ${((scanFee - 0.01) / 0.005).toFixed(0)}×0.005 SOL`}
+          {isProgramTarget 
+            ? "Executable programs scan free" 
+            : (scanType === "general" ? "General audit flat rate" : `0.01 + ${((scanFee - 0.01) / 0.005).toFixed(0)}×0.005 SOL`)}
         </div>
       </div>
 
-      <button onClick={onSubmit} disabled={isScanning || !walletConnected || !targetAddress.trim()}
+      {/* Submit Button */}
+      <button onClick={onSubmit} disabled={!canSubmit}
         className={`w-full py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm ${
           isScanning ? "bg-purple-900/40 text-purple-400 cursor-not-allowed border border-purple-800/20"
-          : !walletConnected ? "bg-gray-800/60 text-gray-600 cursor-not-allowed"
-          : !targetAddress.trim() ? "bg-gray-800/60 text-gray-600 cursor-not-allowed"
+          : !canSubmit ? "bg-gray-800/60 text-gray-600 cursor-not-allowed border border-white/5"
           : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg active:scale-95"
         }`}>
         {isScanning
-          ? <><RefreshCw className="w-4 h-4 animate-spin" /> Scanning…</>
-          : <><Shield className="w-4 h-4" /> Run Security Scan <ChevronRight className="w-4 h-4" /></>}
+          ? <><RefreshCw className="w-4 h-4 animate-spin" /> Running Analysis…</>
+          : <><Shield className="w-4 h-4" /> Start Autonomous Scan <ChevronRight className="w-4 h-4" /></>}
       </button>
 
-      {/* Step 5: Live Progress */}
+      {/* Progress Bar */}
       {isScanning && (
-        <div className="bg-[#0d1525]/90 p-4 rounded-xl border border-purple-500/25">
+        <div className="bg-[#0d1525]/90 p-4 rounded-xl border border-purple-500/25 shadow-inner">
           <div className="flex justify-between text-xs mb-2">
             <span className="text-purple-300 animate-pulse font-medium">{progressMsg}</span>
             <span className="text-purple-400 font-bold">{progress}%</span>
@@ -171,8 +205,8 @@ export default function ScanForm({
               style={{ width: `${progress}%` }} />
           </div>
           <div className="grid grid-cols-4 mt-3 gap-1">
-            {["Payment", "Resolve", "ML Score", "Report"].map((s, i) => (
-              <div key={s} className={`text-center text-[9px] font-bold uppercase py-1 rounded transition-all ${
+            {["Identity", "Onchain Resolve", "KNN Model", "Assessment"].map((s, i) => (
+              <div key={s} className={`text-center text-[8px] font-bold uppercase py-1 rounded transition-all ${
                 progress > i * 25 ? "text-purple-300" : "text-gray-600"
               }`}>{s}</div>
             ))}

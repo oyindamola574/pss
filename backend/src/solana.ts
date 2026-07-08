@@ -41,7 +41,6 @@ export interface ScanTargetInfo {
   forensics?: ForensicData;
 }
 
-// ── All 8 Threat Agents (build_plan.md pattern engine) ────────────────────────
 export interface ThreatSpec {
   key: string;
   label: string;
@@ -111,23 +110,30 @@ export const THREAT_REGISTRY: ThreatSpec[] = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 export function isValidAddress(address: string): boolean {
-  try { new PublicKey(address); return true; } catch { return false; }
+  try {
+    new PublicKey(address);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function looksLikeTxSignature(s: string): boolean {
   return s.length >= 80 && !isValidAddress(s);
 }
 
-function addressSeed(addr: string): number {
-  return addr.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+export async function isProgramExecutable(address: string): Promise<boolean> {
+  if (!isValidAddress(address)) return false;
+  try {
+    const info = await connection.getAccountInfo(new PublicKey(address));
+    return info ? info.executable : false;
+  } catch {
+    return false;
+  }
 }
 
 // ── Payment Verifier ──────────────────────────────────────────────────────────
 export async function verifyPayment(signature: string, expectedSolFee: number): Promise<boolean> {
-  if (signature.startsWith("sim-sig-")) {
-    console.log(`[Solana] Sandbox payment accepted: ${signature}`);
-    return true;
-  }
   try {
     let status = null;
     for (let i = 0; i < 5; i++) {
@@ -149,7 +155,7 @@ export async function verifyPayment(signature: string, expectedSolFee: number): 
     let paid = 0;
     const check = (inst: any) => {
       if (inst?.program === "system" && inst?.parsed?.type === "transfer" &&
-          inst?.parsed?.info?.destination === VAULT_ADDRESS) {
+        inst?.parsed?.info?.destination === VAULT_ADDRESS) {
         paid += inst.parsed.info.lamports;
       }
     };
@@ -164,45 +170,72 @@ export async function verifyPayment(signature: string, expectedSolFee: number): 
 }
 
 // ── Transaction Forensic Resolver ─────────────────────────────────────────────
-async function resolveTransactionForensics(txHash: string): Promise<Partial<ScanTargetInfo>> {
-  const fallback: Partial<ScanTargetInfo> = {
-    type: "TRANSACTION", bytecodeSizeKb: 0, txCount: 1, solBalance: 0,
-    owner: "N/A", executable: false,
-    forensics: { slot: 0, blockTime: null, signerCount: 1, instructionCount: 3,
-      innerCallCount: 2, programsInvoked: ["TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"], fee: 5000 },
-  };
-  try {
-    const tx = await connection.getParsedTransaction(txHash, {
-      commitment: "confirmed", maxSupportedTransactionVersion: 0,
-    });
-    if (!tx) return fallback;
+export async function resolveTransactionForensics(txHash: string): Promise<ScanTargetInfo> {
+  console.log(`[Solana] Resolving transaction forensics: ${txHash}`);
+  const tx = await connection.getParsedTransaction(txHash, {
+    commitment: "confirmed",
+    maxSupportedTransactionVersion: 0,
+  });
 
-    const programs = new Set<string>();
-    const check = (inst: any) => { if (inst?.programId) programs.add(inst.programId.toString()); };
-    tx.transaction.message.instructions.forEach(check);
-    let innerCallCount = 0;
-    tx.meta?.innerInstructions?.forEach(inner => {
-      innerCallCount += inner.instructions.length;
-      inner.instructions.forEach(check);
-    });
-
-    return {
-      type: "TRANSACTION", bytecodeSizeKb: 0, txCount: 1, solBalance: 0,
-      owner: "N/A", executable: false,
-      forensics: {
-        slot: tx.slot,
-        blockTime: tx.blockTime ?? null,
-        signerCount: tx.transaction.message.accountKeys.filter((k: any) => k.signer).length,
-        instructionCount: tx.transaction.message.instructions.length,
-        innerCallCount,
-        programsInvoked: Array.from(programs),
-        fee: tx.meta?.fee ?? 0,
-      },
-    };
-  } catch (err: any) {
-    console.warn(`[Solana] Forensic fetch failed, using mock: ${err.message}`);
-    return fallback;
+  if (!tx) {
+    throw new Error(`Transaction ${txHash} not found on Solana Devnet.`);
   }
+
+  const programs = new Set<string>();
+  const check = (inst: any) => { if (inst?.programId) programs.add(inst.programId.toString()); };
+  tx.transaction.message.instructions.forEach(check);
+  let innerCallCount = 0;
+  tx.meta?.innerInstructions?.forEach(inner => {
+    innerCallCount += inner.instructions.length;
+    inner.instructions.forEach(check);
+  });
+
+  const vulnerabilities: ThreatFinding[] = [];
+  const logString = tx.meta?.logMessages?.join(" ") || "";
+
+  if (tx.meta?.err) {
+    let matchedKey = "CUSTOM_PATTERN";
+    let desc = "Transaction execution failed on-chain.";
+    let remediation = "Verify program state constraints and input parameters.";
+
+    if (logString.includes("custom program error")) {
+      matchedKey = "OWNER_VERIFICATION";
+      desc = "Transaction failed due to custom program error (often incorrect account ownership or signers).";
+      remediation = "Assert account ownership and correct constraints in instruction handlers.";
+    } else if (logString.includes("Rent-exempt")) {
+      matchedKey = "RENT_EXEMPTION_COLLAPSE";
+      desc = "Transaction failed due to rent-exempt minimum threshold requirements.";
+      remediation = "Ensure the destination accounts contain enough lamports to remain rent-exempt.";
+    }
+
+    vulnerabilities.push({
+      type: matchedKey,
+      severity: "HIGH",
+      description: desc,
+      remediation,
+    });
+  }
+
+  return {
+    address: txHash,
+    type: "TRANSACTION",
+    bytecodeSizeKb: 0,
+    txCount: 1,
+    solBalance: 0,
+    owner: "N/A",
+    executable: false,
+    failedChecks: vulnerabilities.length,
+    vulnerabilities,
+    forensics: {
+      slot: tx.slot,
+      blockTime: tx.blockTime ?? null,
+      signerCount: tx.transaction.message.accountKeys.filter((k: any) => k.signer).length,
+      instructionCount: tx.transaction.message.instructions.length,
+      innerCallCount,
+      programsInvoked: Array.from(programs),
+      fee: tx.meta?.fee ?? 0,
+    },
+  };
 }
 
 // ── Main Scanner ──────────────────────────────────────────────────────────────
@@ -213,88 +246,161 @@ export async function resolveAndScanTarget(
 ): Promise<ScanTargetInfo> {
   console.log(`[Solana] Resolving target: ${target}`);
 
-  // Transaction hash — forensic path only, no vuln checks
+  // Transaction hash — forensic path
   if (looksLikeTxSignature(target)) {
-    const data = await resolveTransactionForensics(target);
-    return { address: target, failedChecks: 0, vulnerabilities: [], ...data } as ScanTargetInfo;
+    return await resolveTransactionForensics(target);
   }
 
-  // On-chain account resolution
+  if (!isValidAddress(target)) {
+    throw new Error(`Invalid Solana address format: ${target}`);
+  }
+
+  const pubkey = new PublicKey(target);
+  const info = await connection.getAccountInfo(pubkey);
+
+  if (!info) {
+    throw new Error(`Account address ${target} was not found on Solana Devnet.`);
+  }
+
+  const solBalance = info.lamports / LAMPORTS_PER_SOL;
+  const owner = info.owner.toBase58();
+  const executable = info.executable;
+  const bytecodeSizeKb = info.data.length / 1024;
+  const programDataHex = Buffer.from(info.data.slice(0, 256)).toString("hex");
+
   let type: ScanTargetInfo["type"] = "UNKNOWN";
-  let bytecodeSizeKb = 0;
-  let txCount = Math.floor(Math.random() * 200);
-  let solBalance = 0;
-  let owner = "System Program";
-  let executable = false;
-  let programDataHex = "";
-
-  try {
-    if (isValidAddress(target)) {
-      const pubkey = new PublicKey(target);
-      const info = await connection.getAccountInfo(pubkey);
-      if (info) {
-        solBalance = info.lamports / LAMPORTS_PER_SOL;
-        owner = info.owner.toBase58();
-        executable = info.executable;
-        bytecodeSizeKb = info.data.length / 1024;
-        programDataHex = Buffer.from(info.data.slice(0, 256)).toString("hex");
-        type = executable ? "PROGRAM" : owner === "11111111111111111111111111111111" ? "WALLET" : "PDA";
-      }
-      try {
-        const sigs = await connection.getSignaturesForAddress(pubkey, { limit: 50 });
-        txCount = sigs.length;
-      } catch { /* fallback */ }
-    }
-  } catch (err: any) {
-    console.warn(`[Solana] Account fetch failed: ${err.message}`);
+  if (executable) {
+    type = "PROGRAM";
+  } else if (owner === "11111111111111111111111111111111") {
+    type = "WALLET";
+  } else {
+    type = "PDA";
   }
 
-  if (type === "UNKNOWN") { type = "PDA"; solBalance = 0.5; }
+  // Get transaction count (signatures list)
+  const sigs = await connection.getSignaturesForAddress(pubkey, { limit: 10 }).catch(() => []);
+  const txCount = sigs.length;
 
-  // Vulnerability engine
-  const KNOWN_SAFE = [
-    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-    "11111111111111111111111111111111",
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe8bv",
-  ];
   const vulnerabilities: ThreatFinding[] = [];
 
-  if (!KNOWN_SAFE.includes(target)) {
-    const seed = addressSeed(target);
-    const threatKeys = selectedThreats.length > 0 ? selectedThreats : THREAT_REGISTRY.map(t => t.key);
+  // Live checks
+  let failedTxns = 0;
+  let logsCombined = "";
 
-    for (const key of threatKeys) {
-      if (key === "CUSTOM_PATTERN") {
-        if (customPattern?.trim()) {
-          try {
-            const re = new RegExp(customPattern, "i");
-            if (re.test(programDataHex) || re.test(target)) {
-              vulnerabilities.push({
-                type: "CUSTOM_PATTERN", severity: "WARNING",
-                description: `Custom pattern \`${customPattern}\` matched against program data.`,
-                remediation: "Review the matched pattern in context and refactor if unintentional.",
-                location: "hex offset 0x00–0xFF",
-              });
-            }
-          } catch { /* invalid regex */ }
+  // Query up to 3 transactions to examine runtime log errors
+  for (const s of sigs.slice(0, 3)) {
+    try {
+      const parsed = await connection.getParsedTransaction(s.signature, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+      });
+      if (parsed?.meta) {
+        if (parsed.meta.err) failedTxns++;
+        if (parsed.meta.logMessages) {
+          logsCombined += " " + parsed.meta.logMessages.join(" ");
         }
-        continue;
       }
+    } catch { }
+  }
 
-      const spec = THREAT_REGISTRY.find(t => t.key === key);
-      if (!spec) continue;
-
-      // Deterministic trigger — reproducible for same address
-      const trigger = (seed + key.length * 7) % 10;
-      const threshold = type === "WALLET" ? 9 : 6; // wallets get fewer crit findings
-      if (trigger > threshold) {
-        vulnerabilities.push({
-          type: spec.key, severity: spec.baseSeverity,
-          description: spec.description, remediation: spec.remediation,
-        });
-      }
+  // Map log errors to findings
+  if (failedTxns > 0) {
+    if (logsCombined.includes("custom program error")) {
+      vulnerabilities.push({
+        type: "OWNER_VERIFICATION",
+        severity: "CRITICAL",
+        description: "Recent transaction failure logs indicate account ownership / validation mismatch (custom program error).",
+        remediation: "Verify program account constraints are implemented securely.",
+      });
+    }
+    if (logsCombined.includes("Rent")) {
+      vulnerabilities.push({
+        type: "RENT_EXEMPTION_COLLAPSE",
+        severity: "HIGH",
+        description: "Recent transaction logs show failures relating to rent exemption minimum balance requirements.",
+        remediation: "Ensure created accounts receive correct rent-exempt lamport balances.",
+      });
     }
   }
 
-  return { address: target, type, bytecodeSizeKb, txCount, solBalance, owner, executable, failedChecks: vulnerabilities.length, vulnerabilities };
+  if (type === "PROGRAM") {
+    // Check bytecode size anomalies
+    if (bytecodeSizeKb < 5) {
+      vulnerabilities.push({
+        type: "ACCOUNT_CLOSURE",
+        severity: "WARNING",
+        description: "Program bytecode is unusually small, indicating a shell program or placeholder.",
+        remediation: "Verify the correct deployment transaction or upgrade status.",
+      });
+    }
+
+    // Check Anchor IDL availability on-chain
+    const [idlAddress] = PublicKey.findProgramAddressSync(
+      [Buffer.from("idl"), pubkey.toBuffer()],
+      pubkey
+    );
+    const idlAccount = await connection.getAccountInfo(idlAddress).catch(() => null);
+    if (!idlAccount) {
+      vulnerabilities.push({
+        type: "OWNER_VERIFICATION",
+        severity: "WARNING",
+        description: "Anchor IDL metadata account not found for this program ID.",
+        remediation: "Publish the Anchor IDL to enable developer explainability and safety audits.",
+      });
+    }
+  }
+
+  if (type === "WALLET") {
+    if (solBalance < 0.005 && txCount > 0) {
+      vulnerabilities.push({
+        type: "LAMPORT_DRAINING",
+        severity: "WARNING",
+        description: "Wallet balance is extremely low and depleted. May indicate drainer activity or wallet abandonment.",
+        remediation: "Avoid using this wallet for executing high-volume or high-value transactions.",
+      });
+    }
+  }
+
+  if (type === "PDA") {
+    if (info.data.length === 0) {
+      vulnerabilities.push({
+        type: "REINITIALIZATION_ATTACK",
+        severity: "WARNING",
+        description: "PDA account data is empty. It could be uninitialized or closed.",
+        remediation: "Verify state initialization instructions guard against uninitialized inputs.",
+      });
+    }
+  }
+
+  // Custom regex pattern check against bytecode hex or transaction logs
+  if (customPattern?.trim()) {
+    try {
+      const re = new RegExp(customPattern, "i");
+      if (re.test(programDataHex) || re.test(logsCombined)) {
+        vulnerabilities.push({
+          type: "CUSTOM_PATTERN",
+          severity: "WARNING",
+          description: `Custom pattern regex match '${customPattern}' triggered on program logs/bytecode.`,
+          remediation: "Inspect the matched pattern location to eliminate code anomalies.",
+        });
+      }
+    } catch { }
+  }
+
+  // Filter vulnerabilities based on selected threats (if custom selection is active)
+  const finalVulnerabilities = selectedThreats.length > 0
+    ? vulnerabilities.filter(v => selectedThreats.includes(v.type))
+    : vulnerabilities;
+
+  return {
+    address: target,
+    type,
+    bytecodeSizeKb,
+    txCount,
+    solBalance,
+    owner,
+    executable,
+    failedChecks: finalVulnerabilities.length,
+    vulnerabilities: finalVulnerabilities,
+  };
 }
