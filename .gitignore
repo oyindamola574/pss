@@ -45,6 +45,9 @@ temp/
 # yarn.lock
 # pnpm-lock.yaml
 
+data/
+**/data/
+
 *plan.md
 agentic-engineering-grant-application.md
 claude-session.jsonl
